@@ -77,11 +77,20 @@
 
         function populateVoices() {
             const voices = speechSynthesis.getVoices();
-            const japaneseVoices = voices; //.filter(voice => voice.lang === 'ja-JP');
-            voiceSelect.innerHTML = "";
-            japaneseVoices.forEach((voice, i) => {
+            if (voices.length === 0) {
+                // 音声が読み込めない場合はメッセージを表示
                 const option = document.createElement("option");
-                option.value = voices.indexOf(voice);  // 元のvoices配列のインデックスを保持
+                option.textContent = "利用可能な音声が見つかりません";
+                voiceSelect.appendChild(option);
+                voiceSelect.disabled = true;
+                return;
+            }
+
+            voiceSelect.innerHTML = "";
+            voiceSelect.disabled = false;
+            voices.forEach((voice, i) => {
+                const option = document.createElement("option");
+                option.value = i;
                 option.textContent = `${voice.name} (${voice.lang})`;
                 voiceSelect.appendChild(option);
 
@@ -123,6 +132,9 @@
 
         // 声のリストは非同期でロードされることが多い
         speechSynthesis.onvoiceschanged = populateVoices;
+
+        // 初期化時と音声リスト変更時の両方で呼び出し
+        populateVoices();
     </script>
 </body>
 
