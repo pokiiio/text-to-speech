@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>テキスト読み上げアプリ</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .input-group {
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4">
+        <div class="container">
+            <span class="navbar-brand">テキスト読み上げアプリ</span>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="row">
+            <div class="col-md-8 mx-auto">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="mb-4">
+                            <label for="voiceSelect" class="form-label">音声の選択</label>
+                            <select id="voiceSelect" class="form-select"></select>
+                        </div>
+                        <div id="textInputs" class="mb-4"></div>
+                        <button onclick="speakText()" class="btn btn-primary w-100">
+                            <i class="bi bi-volume-up-fill me-2"></i>読み上げ開始
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
+    <script>
+        // テキストボックスを10個生成し、保存された値があれば復元
+        const textInputsDiv = document.getElementById("textInputs");
+        for (let i = 0; i < 10; i++) {
+            const inputGroup = document.createElement("div");
+            inputGroup.className = "input-group";
+
+            const inputGroupText = document.createElement("span");
+            inputGroupText.className = "input-group-text";
+            inputGroupText.textContent = `${i + 1}`;
+
+            const input = document.createElement("input");
+            input.type = "text";
+            input.className = "form-control";
+            input.id = `text${i}`;
+            input.placeholder = `テキスト ${i + 1}を入力`;
+
+            // 保存された値があれば復元
+            const savedText = localStorage.getItem(`text${i}`);
+            if (savedText) {
+                input.value = savedText;
+            }
+
+            // 入力内容が変更されたら保存
+            input.addEventListener('change', () => {
+                localStorage.setItem(`text${i}`, input.value);
+            });
+
+            inputGroup.appendChild(inputGroupText);
+            inputGroup.appendChild(input);
+            textInputsDiv.appendChild(inputGroup);
+        }
+        const voiceSelect = document.getElementById("voiceSelect");
+
+        function populateVoices() {
+            const voices = speechSynthesis.getVoices();
+            const japaneseVoices = voices.filter(voice => voice.lang === 'ja-JP');
+            voiceSelect.innerHTML = "";
+            japaneseVoices.forEach((voice, i) => {
+                const option = document.createElement("option");
+                option.value = voices.indexOf(voice);  // 元のvoices配列のインデックスを保持
+                option.textContent = `${voice.name} (${voice.lang})`;
+                voiceSelect.appendChild(option);
+
+                // 保存された音声があれば、その音声を選択
+                const savedVoice = localStorage.getItem('selectedVoice');
+                if (savedVoice && voice.name === savedVoice) {
+                    option.selected = true;
+                }
+            });
+
+            // 音声が変更されたら保存
+            voiceSelect.addEventListener('change', () => {
+                const selectedVoice = voices[voiceSelect.value];
+                localStorage.setItem('selectedVoice', selectedVoice.name);
+            });
+        }
+
+        async function speakText() {
+            const voices = speechSynthesis.getVoices();
+            const selectedVoice = voices[voiceSelect.value];
+
+            // 各テキストボックスの内容を順番に読み上げる
+            for (let i = 0; i < 10; i++) {
+                const input = document.getElementById(`text${i}`);
+                const text = input.value.trim();
+
+                const utterance = new SpeechSynthesisUtterance(text);
+                if (selectedVoice) {
+                    utterance.voice = selectedVoice;
+                }
+
+                // 読み上げが完了するまで待機
+                await new Promise(resolve => {
+                    utterance.onend = resolve;
+                    speechSynthesis.speak(utterance);
+                });
+            }
+        }
+
+        // 声のリストは非同期でロードされることが多い
+        speechSynthesis.onvoiceschanged = populateVoices;
+    </script>
+</body>
+
+</html>
