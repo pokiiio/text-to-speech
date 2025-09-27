@@ -77,7 +77,7 @@
 
         function populateVoices() {
             const voices = speechSynthesis.getVoices();
-            const japaneseVoices = voices.filter(voice => voice.lang === 'ja-JP');
+            const japaneseVoices = voices; //.filter(voice => voice.lang === 'ja-JP');
             voiceSelect.innerHTML = "";
             japaneseVoices.forEach((voice, i) => {
                 const option = document.createElement("option");
